@@ -15,6 +15,21 @@ preview_collections = {}
 
 last_selection = []
 
+os.system("color")#Enable console colors
+class textColors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def raiseWarning(warning):
+    print(textColors.WARNING + "WARNING: " + warning + textColors.ENDC)
+
 def get_all_children(obj):
     """递归获取对象的所有子级对象"""
     children = []
@@ -119,6 +134,7 @@ class OBJECT_OT_link_to_active_collection(Operator):
     #     outlinerpropg.is_move_selected_only = preferences.is_move_selected_only
     #     outlinerpropg.is_move_with_parents_and_siblings = preferences.is_move_with_parents_and_siblings
 
+
     def execute(self, context):
         hide_select_viewport_render_list = []
 
@@ -150,7 +166,6 @@ class OBJECT_OT_link_to_active_collection(Operator):
             moved_collections
         if objects_to_link:
             if not outlinerpropg.is_move_selected_only:
-                # print("Mover con todo e hijos!!!")
                 for obj in objects_to_link:
                     # print("buscando!!")
 
@@ -273,6 +288,7 @@ class OBJECT_OT_create_and_link_to_new_collection(Operator):
     #     outlinerpropg.is_move_selected_only = preferences.is_move_selected_only
     #     outlinerpropg.is_move_with_parents_and_siblings = preferences.is_move_with_parents_and_siblings
 
+
     def execute(self, context):
         global last_active_collection
         new_collection = bpy.data.collections.new(self.default_collection_name_OP)
@@ -305,25 +321,30 @@ class OBJECT_OT_create_and_link_to_new_collection(Operator):
         current_active_collection = last_active_collection
         la_layer_collection = encontrar_layer_collection(new_collection.name, context.view_layer.layer_collection)
         context.view_layer.active_layer_collection = la_layer_collection
-        bpy.ops.object.link_to_active_collection()
-        # print(f"pref is move selected: {preferences.is_move_selected_only}")
-        # print(f"pref move with siblings and parents: {preferences.is_move_with_parents_and_siblings}")
-        la_layer_collection = encontrar_layer_collection(current_active_collection, context.view_layer.layer_collection)
-        context.view_layer.active_layer_collection = la_layer_collection
-        if is_restore_properties:
-            preferences.is_move_selected_only = is_move_selected_temp
-            preferences.is_move_with_parents_and_siblings = is_move_with_parents_and_siblings_temp
-            # print("despues de restauracion:")
-            # print(f"pref is move selected: {preferences.is_move_selected_only}")
-            # print(f"pref move with lzy siblings and parents: {preferences.is_move_with_parents_and_siblings}")
-        outlinerpropg.should_update = True
-
-        # self.report({'INFO'}, f"Objects linked to new collection: {self.default_collection_name_OP}")
-        if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
-            self.report({'INFO'}, f"对象已链接到新集合 -  {self.default_collection_name_OP}")
+        state = bpy.ops.object.link_to_active_collection()
+        if state == {'CANCELLED'}:
+            self.report({'WARNING'}, "No objects or collections to move.")
+            return {'CANCELLED'}
         else:
-            self.report({'INFO'}, f"Objects linked to new collection - {self.default_collection_name_OP}")
-        return {'FINISHED'}
+            print("666")
+            # print(f"pref is move selected: {preferences.is_move_selected_only}")
+            # print(f"pref move with siblings and parents: {preferences.is_move_with_parents_and_siblings}")
+            la_layer_collection = encontrar_layer_collection(current_active_collection, context.view_layer.layer_collection)
+            context.view_layer.active_layer_collection = la_layer_collection
+            if is_restore_properties:
+                preferences.is_move_selected_only = is_move_selected_temp
+                preferences.is_move_with_parents_and_siblings = is_move_with_parents_and_siblings_temp
+                # print("despues de restauracion:")
+                # print(f"pref is move selected: {preferences.is_move_selected_only}")
+                # print(f"pref move with lzy siblings and parents: {preferences.is_move_with_parents_and_siblings}")
+            outlinerpropg.should_update = True
+
+            # self.report({'INFO'}, f"Objects linked to new collection: {self.default_collection_name_OP}")
+            if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
+                self.report({'INFO'}, f"对象已链接到新集合 -  {self.default_collection_name_OP}")
+            else:
+                self.report({'INFO'}, f"Objects linked to new collection - {self.default_collection_name_OP}")
+            return {'FINISHED'}
 
     def invoke(self, context, event):
         active_collection = context.view_layer.active_layer_collection.collection
@@ -440,13 +461,13 @@ def get_collections_to_move(selected_collections):
 def move_selected_collections_to_active():
     active_collection = bpy.context.collection
     if not active_collection:
-        print("No active collection found.")
+        # raiseWarning("No active collection found.")
         return
     preferences = bpy.context.preferences.addons[__addon_name__].preferences
     selected_collections = get_selected_collections()
     # print(f"Colecciones Seleccionadas: {selected_collections}")
     if not selected_collections:
-        print("No selected collection found.")
+        # raiseWarning("No objects or collections to move.")
         return
     global last_active_collection
     # print(f"last active: {last_active_collection}")
@@ -459,7 +480,7 @@ def move_selected_collections_to_active():
     collections_to_move = get_collections_to_move(selected_collections)
     # print(f"lo que tiene ahorita: {collections_to_move}")
     if not collections_to_move:
-        print("No collections to move.")
+        # raiseWarning("No collections to move.")
         return
     for collection in collections_to_move:
         if collection.name != active_collection.name and collection.name not in active_collection.children.keys():
@@ -475,10 +496,10 @@ def move_selected_collections_to_active():
             active_collection.children.link(collection)
         else:
             if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
-                print(
+                raiseWarning(
                     f"警告：集合 '{collection.name}' 已在 '{active_collection.name}' 中或是活动集合.")
             else:
-                print(
+                raiseWarning(
                     f"Warning: The collection '{collection.name}' is already in '{active_collection.name}' or is the active collection.")
     # print("Colecciones seleccionadas movidas a la colección activa.")
     return collections_to_move

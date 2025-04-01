@@ -6,34 +6,12 @@ from bpy.types import Operator
 from bpy.app.handlers import persistent
 from bpy.utils import previews
 
-# mis_iconos = None
-#
-# iconos_personalizados = [
-#     ("ADD_TO_COLLECTION", "ADD_TO_COLLECTION.png"),
-#     ("CREATE_AND_ADD_TO_COLLECTION", "CREATE_AND_ADD_TO_COLLECTION.png"),
-#     ("USE_COLLECTION_COLOR","USE_COLLECTION_COLOR.png"),
-#     ("SYNC_OUTLINER","SYNC_OUTLINER.png"),
-#     ("SYNC_VIEWPORT_AND_RENDER","SYNC_VIEWPORT_AND_RENDER.png")
-# ]
+
 language_code = bpy.context.preferences.view.language
 DIR_PATH = os.path.dirname(os.path.split(os.path.abspath(__file__))[0])
 ICONS_PATH = os.path.join(DIR_PATH, "icons")
 PCOLL = None
 preview_collections = {}
-
-# def cargar_iconos_personalizados():
-#     # addon_path = os.path.join(os.path.dirname(__file__), "icons")
-#     addon_path = os.path.join(os.path.dirname(os.path.split(os.path.abspath(__file__))[0]),"icons")
-#     global mis_iconos
-#     mis_iconos = previews.new()
-#     for icon_key, icon_file in iconos_personalizados:
-#         img_file = os.path.join(addon_path, icon_file)
-#         mis_iconos.load(icon_key, img_file, 'IMAGE')
-#
-#
-# def quitar_iconos_personalizados():
-#     global mis_iconos
-#     previews.remove(mis_iconos)
 
 last_selection = []
 
@@ -407,13 +385,29 @@ def get_selected_collections():
     """获取在 Outliner 中选择的集合。"""
     selected_collections = []
 
-    # 遍历所有区域，查找 Outliner 区域
-    for area in bpy.context.screen.areas:
-        if area.type == 'OUTLINER':
-            # 获取选中的 ID
+    if bpy.app.version >= (4, 0, 0):
+        override = None
+        for area in bpy.context.screen.areas:
+            if area.type == 'OUTLINER':
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        override = {'area': area, 'region': region}
+                        break
+                break
+        if not override:
+            return []
+        with bpy.context.temp_override(area=override['area'], region=override['region']):
             selection = bpy.context.selected_ids
             selected_collections = [sel for sel in selection if sel.rna_type.name == 'Collection']
-            break
+
+    else:
+        # 遍历所有区域，查找 Outliner 区域
+        for area in bpy.context.screen.areas:
+            if area.type == 'OUTLINER':
+                # 获取选中的 ID
+                selection = bpy.context.selected_ids
+                selected_collections = [sel for sel in selection if sel.rna_type.name == 'Collection']
+                break
 
     return selected_collections
 
@@ -886,23 +880,32 @@ def center_view3d_from_outliner(context):
     global puede_centrar_la_view3d
     overrides = get_view3d_context_overrides()
 
-    for override in overrides:
-        area = override['area']
-        region = override['region']
+    if bpy.app.version >= (4, 0, 0):
+        for override in overrides:
+            # print(f"entro a center view, override es: {override}")
+            with context.temp_override(area=override['area'], region=override['region']):
+                if bpy.context.active_object is not None and bpy.context.active_object.select_get():
+                    # print("CENTER VIEW 3D")
+                    bpy.ops.view3d.view_selected('INVOKE_DEFAULT')
+                    puede_centrar_la_view3d = False
+    else:
+        for override in overrides:
+            area = override['area']
+            region = override['region']
 
-        # 确保当前上下文是视图3D
-        if area.type == 'VIEW_3D':
-            # 检查是否有活动对象并且被选中
-            if context.active_object is not None and context.active_object.select_get():
-                # 创建一个上下文覆盖
-                override_context = context.copy()
-                override_context['area'] = area
-                override_context['region'] = region
+            # 确保当前上下文是视图3D
+            if area.type == 'VIEW_3D':
+                # 检查是否有活动对象并且被选中
+                if context.active_object is not None and context.active_object.select_get():
+                    # 创建一个上下文覆盖
+                    override_context = context.copy()
+                    override_context['area'] = area
+                    override_context['region'] = region
 
-                # 执行视图选择操作
-                bpy.ops.view3d.view_selected(override_context, 'INVOKE_DEFAULT')
-                puede_centrar_la_view3d = False
-                break  # 找到一个合适的区域后退出循环
+                    # 执行视图选择操作
+                    bpy.ops.view3d.view_selected(override_context, 'INVOKE_DEFAULT')
+                    puede_centrar_la_view3d = False
+                    break  # 找到一个合适的区域后退出循环
 
 
 def get_view3d_context_override():
@@ -989,67 +992,61 @@ def centrar_outliner(context):
 
     last_execution_time = current_time
 
-    for window in bpy.context.window_manager.windows:
-        for area in window.screen.areas:
-            if area.type == 'OUTLINER':
-                for region in area.regions:
-                    if region.type == 'WINDOW':
-                        # 创建上下文覆盖
-                        override = context.copy()
-                        override['window'] = window
-                        override['area'] = area
-                        override['region'] = region
+    if bpy.app.version >= (4, 0, 0):
+        for window in bpy.context.window_manager.windows:
+            for area in window.screen.areas:
+                if area.type == 'OUTLINER':
+                    for region in area.regions:
+                        if region.type == 'WINDOW':
 
-                        if local_puede_llamar_centrar_outliner == True:
-                            # 确保上下文正确
-                            if bpy.context.active_object is not None and bpy.context.active_object.select_get():
+                            with context.temp_override(window=window, area=area, region=region):
 
-                                bpy.ops.outliner.show_one_level(override, open=False)
-                                bpy.ops.outliner.show_active(override)
+                                if local_puede_llamar_centrar_outliner == True:
+                                    # 确保上下文正确
+                                    if bpy.context.active_object is not None and bpy.context.active_object.select_get():
+                                        bpy.ops.outliner.show_one_level(open=False)
+                                        bpy.ops.outliner.show_active()
 
-                            # break  # 找到目标区域后可以退出循环
-                        else:
-                            # 确保上下文正确
-                            if bpy.context.active_object is not None and bpy.context.active_object.select_get():
-                                if preferences.is_auto_expand:
+                                    # break  # 找到目标区域后可以退出循环
+                                else:
+                                    # 确保上下文正确
+                                    if bpy.context.active_object is not None and bpy.context.active_object.select_get():
+                                        if preferences.is_auto_expand:
+                                            bpy.ops.outliner.show_one_level(open=False)
+                                        # bpy.ops.outliner.show_active(override)
+
+                                    break  # 找到目标区域后可以退出循环
+
+    else:
+        for window in bpy.context.window_manager.windows:
+            for area in window.screen.areas:
+                if area.type == 'OUTLINER':
+                    for region in area.regions:
+                        if region.type == 'WINDOW':
+                            # 创建上下文覆盖
+                            override = context.copy()
+                            override['window'] = window
+                            override['area'] = area
+                            override['region'] = region
+
+                            if local_puede_llamar_centrar_outliner == True:
+                                # 确保上下文正确
+                                if bpy.context.active_object is not None and bpy.context.active_object.select_get():
+
                                     bpy.ops.outliner.show_one_level(override, open=False)
-                                # bpy.ops.outliner.show_active(override)
+                                    bpy.ops.outliner.show_active(override)
 
-                            break  # 找到目标区域后可以退出循环
+                                # break  # 找到目标区域后可以退出循环
+                            else:
+                                # 确保上下文正确
+                                if bpy.context.active_object is not None and bpy.context.active_object.select_get():
+                                    if preferences.is_auto_expand:
+                                        bpy.ops.outliner.show_one_level(override, open=False)
+                                    # bpy.ops.outliner.show_active(override)
+
+                                break  # 找到目标区域后可以退出循环
 
 
-# def centrar_outliner1(context):
-#     global puede_llamar_centrar_outliner
-#     puede_llamar_centrar_outliner = False
-#
-#     global puede_ignorar_encima_de_outliner
-#     puede_ignorar_encima_de_outliner = False
-#
-#     global last_execution_time
-#     current_time = time.time()
-#
-#     preferences = bpy.context.preferences.addons[__addon_name__].preferences
-#
-#     last_execution_time = current_time
-#
-#     for window in bpy.context.window_manager.windows:
-#         for area in window.screen.areas:
-#             if area.type == 'OUTLINER':
-#                 for region in area.regions:
-#                     if region.type == 'WINDOW':
-#                         # 创建上下文覆盖
-#                         override = context.copy()
-#                         override['window'] = window
-#                         override['area'] = area
-#                         override['region'] = region
-#                         print("777")
-#                         # 确保上下文正确
-#                         if bpy.context.active_object is not None and bpy.context.active_object.select_get():
-#                             if preferences.is_auto_expand:
-#                                 bpy.ops.outliner.show_one_level(override, open=False)
-#                             bpy.ops.outliner.show_active(override)
-#
-#                         # break  # 找到目标区域后可以退出循环
 
 
 def is_mouse_over_outliner(x, y):

@@ -322,11 +322,13 @@ class OBJECT_OT_create_and_link_to_new_collection(Operator):
         la_layer_collection = encontrar_layer_collection(new_collection.name, context.view_layer.layer_collection)
         context.view_layer.active_layer_collection = la_layer_collection
         state = bpy.ops.object.link_to_active_collection()
-        if state == {'CANCELLED'}:
+        # if state == {'CANCELLED'}:
+        #     self.report({'WARNING'}, "No objects or collections to move.")
+        #     return {'CANCELLED'}
+        if bpy.context.selected_objects is not None:
             self.report({'WARNING'}, "No objects or collections to move.")
-            return {'CANCELLED'}
+            return {'FINISHED'}
         else:
-            print("666")
             # print(f"pref is move selected: {preferences.is_move_selected_only}")
             # print(f"pref move with siblings and parents: {preferences.is_move_with_parents_and_siblings}")
             la_layer_collection = encontrar_layer_collection(current_active_collection, context.view_layer.layer_collection)

@@ -319,7 +319,7 @@ class OBJECT_OT_create_and_link_to_new_collection(Operator):
         outlinerpropg.should_update = True
 
         # self.report({'INFO'}, f"Objects linked to new collection: {self.default_collection_name_OP}")
-        if language_code == "zh_CN" or language_code == "zh_TW":
+        if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
             self.report({'INFO'}, f"对象已链接到新集合 -  {self.default_collection_name_OP}")
         else:
             self.report({'INFO'}, f"Objects linked to new collection - {self.default_collection_name_OP}")
@@ -474,7 +474,7 @@ def move_selected_collections_to_active():
                 bpy.context.scene.collection.children.unlink(collection)
             active_collection.children.link(collection)
         else:
-            if language_code == "zh_CN" or language_code == "zh_TW":
+            if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
                 print(
                     f"警告：集合 '{collection.name}' 已在 '{active_collection.name}' 中或是活动集合.")
             else:
@@ -502,7 +502,7 @@ class OBJECT_OT_rename_objects_in_collection(Operator):
         for i, obj in enumerate(active_collection.objects, start=1):
             new_name = f"{collection_name}_{i:02d}"
             obj.name = new_name
-        if language_code == "zh_CN" or language_code == "zh_TW":
+        if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
             self.report({'INFO'}, f"在集合 '{collection_name}' 中重命名了 {len(active_collection.objects)} 个对象")
         else:
             self.report({'INFO'}, f"Renamed {len(active_collection.objects)} objects in collection '{collection_name}'")

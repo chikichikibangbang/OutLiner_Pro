@@ -497,12 +497,12 @@ def move_selected_collections_to_active():
                 bpy.context.scene.collection.children.unlink(collection)
             active_collection.children.link(collection)
         else:
-            if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
-                raiseWarning(
-                    f"警告：集合 '{collection.name}' 已在 '{active_collection.name}' 中或是活动集合.")
-            else:
-                raiseWarning(
-                    f"Warning: The collection '{collection.name}' is already in '{active_collection.name}' or is the active collection.")
+            # if language_code in ["zh_CN", "zh_TW", "zh_HANS"]:
+            #     raiseWarning(
+            #         f"警告：集合 '{collection.name}' 已在 '{active_collection.name}' 中或是活动集合.")
+            # else:
+            raiseWarning(
+                f"Warning: The collection '{collection.name}' is already in '{active_collection.name}' or is the active collection.")
     # print("Colecciones seleccionadas movidas a la colección activa.")
     return collections_to_move
 

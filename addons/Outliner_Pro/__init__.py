@@ -21,8 +21,8 @@ bl_info = {
     "version": (1, 0),
     "description": "A plugin that helps you quickly manage outline views.",
     "warning": "",
-    "wiki_url": "https://github.com/chikichikibangbang/OutLiner_Pro_bl3.0",
-    "tracker_url": "https://github.com/chikichikibangbang/OutLiner_Pro_bl3.0/issues",
+    "wiki_url": "https://github.com/chikichikibangbang/OutLiner_Pro",
+    "tracker_url": "https://github.com/chikichikibangbang/OutLiner_Pro/issues",
     "support": "COMMUNITY",
     "category": "3D View"
 }

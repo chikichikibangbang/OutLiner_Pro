@@ -325,7 +325,7 @@ class OBJECT_OT_create_and_link_to_new_collection(Operator):
         # if state == {'CANCELLED'}:
         #     self.report({'WARNING'}, "No objects or collections to move.")
         #     return {'CANCELLED'}
-        if bpy.context.selected_objects is not None:
+        if not bpy.context.selected_objects:
             self.report({'WARNING'}, "No objects or collections to move.")
             return {'FINISHED'}
         else:

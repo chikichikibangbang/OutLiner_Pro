@@ -750,7 +750,10 @@ def cambiar_color_type_del_viewshading(cambiar_color_type=True):
                         break
                     else:
                         space.shading.color_type = 'MATERIAL'
-                        space.shading.wireframe_color_type = 'MATERIAL'
+                        if bpy.app.version >= (4, 0, 0):
+                            space.shading.wireframe_color_type = 'THEME'
+                        else:
+                            space.shading.wireframe_color_type = 'MATERIAL'
 
 
 def draw_outliner_toggle(self, context):
